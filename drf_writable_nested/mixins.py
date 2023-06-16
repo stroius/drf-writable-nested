@@ -170,6 +170,8 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                 )
             elif not related_field.many_to_many:
                 save_kwargs[related_field.name] = instance
+            elif related_field.many_to_many and related_field.remote_field.through:
+                save_kwargs['parent_instance'] = instance
 
             new_related_instances = []
             errors = []
@@ -210,10 +212,12 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
             obj = None
             data = self.get_initial()[field_name]
             model_class = field.Meta.model
+
             if pk := self._get_related_pk(data, model_class):
                 obj = model_class.objects.filter(pk=pk).first()
             if not obj and getattr(field, 'only_assignation_allowed', False):
                 continue
+
             serializer = self._get_serializer_for_field(
                 field,
                 instance=obj,
