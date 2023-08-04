@@ -177,9 +177,15 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                 obj = instances.get(
                     self._get_related_pk(data, field.Meta.model)
                 )
-                if not obj and (getattr(field, 'only_assignation_allowed', False) or
-                                getattr(field.parent, 'only_assignation_allowed', False)):
+
+                only_assignation_allowed = any([getattr(field, 'only_assignation_allowed', False),
+                                                getattr(field.parent, 'only_assignation_allowed', False)])
+                
+                if only_assignation_allowed:
+                    if obj:
+                        new_related_instances.append(obj)
                     continue
+
                 serializer = self._get_serializer_for_field(
                     field,
                     instance=obj,
