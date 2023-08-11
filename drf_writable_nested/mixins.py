@@ -13,6 +13,15 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 
 
+class NestedListSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        result = []
+        for initial_data, attrs in zip(self.initial_data, validated_data):
+            self.child.initial_data = initial_data
+            result.append(self.child.create(attrs))
+        return result
+    
+
 class BaseNestedModelSerializer(serializers.ModelSerializer):
     def _extract_relations(self, validated_data):
         reverse_relations = OrderedDict()
@@ -219,7 +228,9 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
 
             if pk := self._get_related_pk(data, model_class):
                 obj = model_class.objects.filter(pk=pk).first()
-            if not obj and getattr(field, 'only_assignation_allowed', False):
+            if getattr(field, 'only_assignation_allowed', False):
+                if obj:
+                    attrs[field_source] = obj
                 continue
 
             serializer = self._get_serializer_for_field(
