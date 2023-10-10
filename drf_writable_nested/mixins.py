@@ -113,11 +113,12 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
         }
 
     def _get_related_pk(self, data, model_class):
+        if not data:
+            return None
+        
         pk = data.get('pk') or data.get(model_class._meta.pk.attname)
-
         if pk:
             return str(pk)
-
         return None
 
     def _extract_related_pks(self, field, related_data):
