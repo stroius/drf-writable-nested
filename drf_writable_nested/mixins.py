@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
+from rest_flex_fields.serializers import FlexFieldsSerializerMixin
 
 
 class NestedListSerializer(serializers.ListSerializer):
@@ -93,6 +94,10 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
             'context': self.context,
             'partial': self.partial if kwargs.get('instance') else False,
         })
+        if issubclass(field.__class__, FlexFieldsSerializerMixin):
+            kwargs.update({
+                'parent': self
+            })
 
         # if field is a polymorphic serializer
         if hasattr(field, '_get_serializer_from_resource_type'):
