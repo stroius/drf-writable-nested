@@ -30,7 +30,7 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
 
         # Remove related fields from validated data for future manipulations
         for field_name, field in self.fields.items():
-            if field.read_only:
+            if field.read_only or self.get_initial().get(field_name) is None:
                 continue
             try:
                 related_field, direct = self._get_related_field(field)
