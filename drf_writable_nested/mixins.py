@@ -5,7 +5,7 @@ from typing import List, Tuple
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
-from django.db.models import ProtectedError, SET_NULL, SET_DEFAULT
+from django.db.models import ProtectedError, SET_NULL, SET_DEFAULT, Model
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyRel
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -260,6 +260,10 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
 
     def _get_save_kwargs(self, field_name):
         save_kwargs = self._save_kwargs[field_name]
+
+        if isinstance(save_kwargs, Model):
+            return {field_name: save_kwargs}
+
         if not isinstance(save_kwargs, dict):
             raise TypeError(
                 _("Arguments to nested serializer's `save` must be dict's")
