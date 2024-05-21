@@ -185,6 +185,8 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                 )
             elif not related_field.many_to_many:
                 save_kwargs[related_field.name] = instance
+            elif related_field.many_to_many:
+                save_kwargs[related_field.m2m_field_name()] = instance
 
             new_related_instances = []
             errors = []
@@ -224,7 +226,7 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
             if related_field.many_to_many:
                 # Add m2m instances to through model via add
                 m2m_manager = getattr(instance, field_source)
-                m2m_manager.add(*new_related_instances)
+                m2m_manager.add(*filter(lambda r: m2m_manager.model == r._meta.model, new_related_instances))
 
     def update_or_create_direct_relations(self, attrs, relations):
         for field_name, (field, field_source) in relations.items():
