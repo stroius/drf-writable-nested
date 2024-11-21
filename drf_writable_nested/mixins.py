@@ -152,6 +152,7 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
     def update_or_create_reverse_relations(self, instance, reverse_relations):
         # Update or create reverse relations:
         # many-to-one, many-to-many, reversed one-to-one
+
         for field_name, (related_field, field, field_source) in \
                 reverse_relations.items():
 
@@ -236,10 +237,15 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
 
             if pk := self._get_related_pk(data, model_class):
                 obj = model_class.objects.filter(pk=pk).first()
+
             if getattr(field, 'only_assignation_allowed', False):
                 if obj:
                     attrs[field_source] = obj
                 continue
+
+            # this field is o2o and there is a value
+            if self.Meta.model._meta.get_field(field_name).one_to_one and getattr(self.instance, field_name, None):
+                obj = getattr(self.instance, field_name)
 
             serializer = self._get_serializer_for_field(
                 field,
@@ -322,7 +328,7 @@ class NestedUpdateMixin(BaseNestedModelSerializer):
         self.delete_reverse_relations_if_need(instance, reverse_relations)
         self.update_or_create_reverse_relations(instance, reverse_relations)
 
-        instance.refresh_from_db()
+        # instance.refresh_from_db()
         return instance
 
     def perform_nested_delete_or_update(self, pks_to_delete, model_class, instance, related_field, field_source):
