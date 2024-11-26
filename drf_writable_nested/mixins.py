@@ -206,19 +206,25 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                         new_related_instances.append(obj)
                     continue
 
-                serializer = self._get_serializer_for_field(
-                    field,
-                    instance=obj,
-                    data=data,
-                )
-                try:
-                    serializer.is_valid(raise_exception=True)
-                    related_instance = serializer.save(**save_kwargs)
-                    data['pk'] = related_instance.pk
-                    new_related_instances.append(related_instance)
+                if set(data) - {'id'}:
+                    # Check if the data contains something to update
+                    serializer = self._get_serializer_for_field(
+                        field,
+                        instance=obj,
+                        data=data,
+                    )
+                    try:
+                        serializer.is_valid(raise_exception=True)
+                        related_instance = serializer.save(**save_kwargs)
+                        data['pk'] = related_instance.pk
+                        new_related_instances.append(related_instance)
+                        errors.append({})
+                    except ValidationError as exc:
+                        errors.append(exc.detail)
+                else:
+                    # only ID has been passed
+                    new_related_instances.append(obj)
                     errors.append({})
-                except ValidationError as exc:
-                    errors.append(exc.detail)
 
             if any(errors):
                 if related_field.one_to_one:
