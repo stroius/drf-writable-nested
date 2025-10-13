@@ -250,24 +250,27 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                 if obj:
                     attrs[field_source] = obj
                 continue
+            
+            if set(data) - {'id'}:
+                # this field is o2o and there is a value
+                if self.Meta.model._meta.get_field(field_name).one_to_one and getattr(self.instance, field_name, None):
+                    obj = getattr(self.instance, field_name)
 
-            # this field is o2o and there is a value
-            if self.Meta.model._meta.get_field(field_name).one_to_one and getattr(self.instance, field_name, None):
-                obj = getattr(self.instance, field_name)
-
-            serializer = self._get_serializer_for_field(
-                field,
-                instance=obj,
-                data=data,
-            )
-
-            try:
-                serializer.is_valid(raise_exception=True)
-                attrs[field_source] = serializer.save(
-                    **self._get_save_kwargs(field_name)
+                serializer = self._get_serializer_for_field(
+                    field,
+                    instance=obj,
+                    data=data,
                 )
-            except ValidationError as exc:
-                raise ValidationError({field_name: exc.detail})
+
+                try:
+                    serializer.is_valid(raise_exception=True)
+                    attrs[field_source] = serializer.save(
+                        **self._get_save_kwargs(field_name)
+                    )
+                except ValidationError as exc:
+                    raise ValidationError({field_name: exc.detail})
+            else:
+                attrs[field_source] = obj
 
     def save(self, **kwargs):
         self._save_kwargs = defaultdict(dict, kwargs)
