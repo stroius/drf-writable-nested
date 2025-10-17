@@ -31,6 +31,8 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
         # Remove related fields from validated data for future manipulations
         for field_name, field in self.fields.items():
             if field.read_only or self.get_initial().get(field_name) is None:
+                if isinstance(field, NestedListSerializer):
+                    validated_data.pop(field.source, None)  # Remove field from validated data
                 continue
             try:
                 related_field, direct = self._get_related_field(field)
@@ -251,7 +253,7 @@ class BaseNestedModelSerializer(serializers.ModelSerializer):
                     attrs[field_source] = obj
                 continue
             
-            if set(data) - {'id'}:
+            if set(data) - {'id'} or (isinstance(data, dict) and len(data) == 0):
                 # this field is o2o and there is a value
                 if self.Meta.model._meta.get_field(field_name).one_to_one and getattr(self.instance, field_name, None):
                     obj = getattr(self.instance, field_name)
@@ -323,8 +325,10 @@ class NestedUpdateMixin(BaseNestedModelSerializer):
     }
 
     def update(self, instance, validated_data):
+        print(f'update validated_data before: {validated_data}')
         relations, reverse_relations = self._extract_relations(validated_data)
-
+        print(f'update validated_data after: {validated_data}')
+        
         # Create or update direct relations (foreign key, one-to-one)
         self.update_or_create_direct_relations(
             validated_data,
