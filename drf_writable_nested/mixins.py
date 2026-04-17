@@ -325,9 +325,9 @@ class NestedUpdateMixin(BaseNestedModelSerializer):
     }
 
     def update(self, instance, validated_data):
-        print(f'update validated_data before: {validated_data}')
+        # print(f'update validated_data before: {validated_data}')
         relations, reverse_relations = self._extract_relations(validated_data)
-        print(f'update validated_data after: {validated_data}')
+        # print(f'update validated_data after: {validated_data}')
         
         # Create or update direct relations (foreign key, one-to-one)
         self.update_or_create_direct_relations(
